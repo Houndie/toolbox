@@ -38,9 +38,8 @@ var doCommand = &cobra.Command{
 			"GOBIN="+filepath.Join(cwd, "_tools"),
 		)
 
-		if err := docmd.Run(); err != nil {
-			return fmt.Errorf("error calling user command: %w", err)
-		}
+		// We don't really care about the error from this, stderr goes to screen.
+		_ = docmd.Run()
 		return nil
 	},
 }
