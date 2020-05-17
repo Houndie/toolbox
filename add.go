@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var addCommand = &cobra.Command{
@@ -41,7 +42,7 @@ var addCommand = &cobra.Command{
 			dependency = dependency + "@" + args[1]
 		}
 
-		goget := exec.Command("go", "get", dependency)
+		goget := exec.Command(viper.GetString(goFlag), "get", dependency)
 		cwd, err := os.Getwd()
 		if err != nil {
 			return fmt.Errorf("error fetching current working directory: %w", err)

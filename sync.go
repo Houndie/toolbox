@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var syncCommand = &cobra.Command{
@@ -22,7 +23,7 @@ var syncCommand = &cobra.Command{
 		}
 
 		for _, tool := range tools {
-			goinstall := exec.Command("go", "install", tool)
+			goinstall := exec.Command(viper.GetString(goFlag), "install", tool)
 			cwd, err := os.Getwd()
 			if err != nil {
 				return fmt.Errorf("error fetching current working directory: %w", err)

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var removeCommand = &cobra.Command{
@@ -43,7 +44,7 @@ var removeCommand = &cobra.Command{
 			return fmt.Errorf("error deleting dependency executable: %w", err)
 		}
 
-		if _, err := exec.Command("go", "mod", "tidy").Output(); err != nil {
+		if _, err := exec.Command(viper.GetString(goFlag), "mod", "tidy").Output(); err != nil {
 			eerr := &exec.ExitError{}
 			if !errors.As(err, &eerr) {
 				return fmt.Errorf("error calling go mod tidy: %w", err)
