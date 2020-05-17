@@ -41,7 +41,7 @@ func readTools() ([]string, error) {
 }
 
 func writeTools(tools []string) error {
-	file, err := os.OpenFile(toolsfile, os.O_RDWR|os.O_CREATE, 0666)
+	file, err := os.OpenFile(toolsfile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		return fmt.Errorf("error opening tools file %s: %w", toolsfile, err)
 	}
@@ -49,6 +49,9 @@ func writeTools(tools []string) error {
 
 	if err := toolsTemplate.Execute(file, tools); err != nil {
 		return fmt.Errorf("error writing data to toolsfile %s: %w", toolsfile, err)
+	}
+	if err := file.Close(); err != nil {
+		return fmt.Errorf("error closing toolsfile %s: %w", toolsfile, err)
 	}
 
 	if _, err := exec.Command("goimports", "-w", toolsfile).Output(); err != nil {
