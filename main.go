@@ -25,6 +25,7 @@ const goFlag = "go"
 const goimportsFlag = "goimports"
 const toolsfileFlag = "tools_file"
 const toolsdirFlag = "tools_directory"
+const configfileFlag = "config_file"
 
 func init() {
 	rootCmd.PersistentFlags().String(goFlag, "go", "the \"go\" executable to use")
@@ -39,9 +40,17 @@ func init() {
 	rootCmd.PersistentFlags().String(toolsdirFlag, "_tools", "the directory where tool binaries are stored")
 	viper.BindPFlag(toolsdirFlag, rootCmd.PersistentFlags().Lookup(toolsdirFlag))
 
+	cfgFile := ""
+	rootCmd.PersistentFlags().StringVar(&cfgFile, configfileFlag, "", "the location of a config file to load. By default, looks for \".toolbox.ini\", \".toolbox.json\", \".toolbox.yaml\", or \".toolbox.toml\"")
+
 	cobra.OnInitialize(func() {
-		viper.AddConfigPath(".")
-		viper.SetConfigName(".toolbox")
+		if cfgFile == "" {
+			viper.AddConfigPath(".")
+			viper.SetConfigName(".toolbox")
+		} else {
+			viper.SetConfigFile(cfgFile)
+		}
+
 		viper.SetEnvPrefix("TOOLBOX")
 		viper.AutomaticEnv()
 
