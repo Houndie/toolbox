@@ -20,10 +20,14 @@ func main() {
 }
 
 const goFlag = "go"
+const goimportsFlag = "goimports"
 
 func init() {
 	rootCmd.PersistentFlags().String(goFlag, "go", "the \"go\" executable to use")
 	viper.BindPFlag(goFlag, rootCmd.PersistentFlags().Lookup(goFlag))
+
+	rootCmd.PersistentFlags().String(goimportsFlag, "goimports", "the \"goimports\" executable to use")
+	viper.BindPFlag(goimportsFlag, rootCmd.PersistentFlags().Lookup(goimportsFlag))
 
 	cobra.OnInitialize(func() {
 		viper.AddConfigPath(".")

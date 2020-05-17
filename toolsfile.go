@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"strings"
 	"text/template"
+
+	"github.com/spf13/viper"
 )
 
 const toolsfile = "tools.go"
@@ -54,12 +56,14 @@ func writeTools(tools []string) error {
 		return fmt.Errorf("error closing toolsfile %s: %w", toolsfile, err)
 	}
 
-	if _, err := exec.Command("goimports", "-w", toolsfile).Output(); err != nil {
-		eerr := &exec.ExitError{}
-		if !errors.As(err, &eerr) {
-			return fmt.Errorf("error calling goimports: %w", err)
+	if _, err := exec.LookPath(viper.GetString(goimportsFlag)); err == nil {
+		if _, err := exec.Command(viper.GetString(goimportsFlag), "-w", toolsfile).Output(); err != nil {
+			eerr := &exec.ExitError{}
+			if !errors.As(err, &eerr) {
+				return fmt.Errorf("error calling goimports: %w", err)
+			}
+			return fmt.Errorf("error calling goimports: %s: %w", string(eerr.Stderr), err)
 		}
-		return fmt.Errorf("error calling goimports: %s: %w", string(eerr.Stderr), err)
 	}
 
 	return nil
