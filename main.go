@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -21,6 +23,8 @@ func main() {
 
 const goFlag = "go"
 const goimportsFlag = "goimports"
+const toolsfileFlag = "tools_file"
+const toolsdirFlag = "tools_directory"
 
 func init() {
 	rootCmd.PersistentFlags().String(goFlag, "go", "the \"go\" executable to use")
@@ -29,11 +33,31 @@ func init() {
 	rootCmd.PersistentFlags().String(goimportsFlag, "goimports", "the \"goimports\" executable to use")
 	viper.BindPFlag(goimportsFlag, rootCmd.PersistentFlags().Lookup(goimportsFlag))
 
+	rootCmd.PersistentFlags().String(toolsfileFlag, "tools.go", "the file in which to store tool data. This should end in a \".go\" extenstion so that go's module system picks it up.")
+	viper.BindPFlag(toolsfileFlag, rootCmd.PersistentFlags().Lookup(toolsfileFlag))
+
+	rootCmd.PersistentFlags().String(toolsdirFlag, "_tools", "the directory where tool binaries are stored")
+	viper.BindPFlag(toolsdirFlag, rootCmd.PersistentFlags().Lookup(toolsdirFlag))
+
 	cobra.OnInitialize(func() {
 		viper.AddConfigPath(".")
 		viper.SetConfigName(".toolbox")
+		viper.SetEnvPrefix("TOOLBOX")
 		viper.AutomaticEnv()
 
 		_ = viper.ReadInConfig()
 	})
+}
+
+func toolsDir() (string, error) {
+	toolsdir := viper.GetString(toolsdirFlag)
+	if !filepath.IsAbs(toolsdir) {
+		return toolsdir, nil
+	}
+
+	toolsdir, err := filepath.Abs(toolsdir)
+	if err != nil {
+		return "", fmt.Errorf("error making absolute tools dir: %w", err)
+	}
+	return toolsdir, nil
 }

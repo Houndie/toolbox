@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -13,8 +12,8 @@ import (
 
 var syncCommand = &cobra.Command{
 	Use:   "sync",
-	Short: "makes sure all dependencies are at the correct version",
-	Long:  "uses go install to install all of our dependencies.  Installs from module cache if they are found, from the internet if not",
+	Short: "Make sure all dependencies are at the correct version",
+	Long:  "Uses go install to install all of our dependencies.  Installs from module cache if they are found, from the internet if not.",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		tools, err := readTools()
@@ -24,11 +23,11 @@ var syncCommand = &cobra.Command{
 
 		for _, tool := range tools {
 			goinstall := exec.Command(viper.GetString(goFlag), "install", tool)
-			cwd, err := os.Getwd()
+			toolsdir, err := toolsDir()
 			if err != nil {
-				return fmt.Errorf("error fetching current working directory: %w", err)
+				return err
 			}
-			goinstall.Env = append(os.Environ(), "GOBIN="+filepath.Join(cwd, "_tools"))
+			goinstall.Env = append(os.Environ(), "GOBIN="+toolsdir)
 			if _, err := goinstall.Output(); err != nil {
 				eerr := &exec.ExitError{}
 				if !errors.As(err, &eerr) {

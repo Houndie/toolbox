@@ -14,8 +14,8 @@ import (
 
 var removeCommand = &cobra.Command{
 	Use:   "remove <dependency>",
-	Short: "removes a dependency",
-	Long:  "removes a dependency, and attempts to remove the executable of the same name as well",
+	Short: "Remove a dependency",
+	Long:  "Removes a dependency, and attempts to remove the executable of the same name as well.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dependency := args[0]
@@ -35,7 +35,7 @@ var removeCommand = &cobra.Command{
 			}
 		}
 		_, dependencyPkg := path.Split(dependency)
-		dependencyFile := filepath.Join("_tools", dependencyPkg)
+		dependencyFile := filepath.Join(viper.GetString(toolsdirFlag), dependencyPkg)
 		if _, err := os.Stat(dependencyFile); os.IsNotExist(err) {
 			return nil
 		}

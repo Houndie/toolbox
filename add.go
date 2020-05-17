@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -13,8 +12,8 @@ import (
 
 var addCommand = &cobra.Command{
 	Use:   "add <dependency> [version]",
-	Short: "add a new dependency",
-	Long:  "adds dependency to the list of dependencies managed by toolbox.  If a version is provided, adds that version as well",
+	Short: "Add a new dependency",
+	Long:  "Adds dependency to the list of dependencies managed by toolbox.  If a version is provided, adds that version as well.",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dependency := args[0]
@@ -43,11 +42,11 @@ var addCommand = &cobra.Command{
 		}
 
 		goget := exec.Command(viper.GetString(goFlag), "get", dependency)
-		cwd, err := os.Getwd()
+		toolsdir, err := toolsDir()
 		if err != nil {
-			return fmt.Errorf("error fetching current working directory: %w", err)
+			return err
 		}
-		goget.Env = append(os.Environ(), "GOBIN="+filepath.Join(cwd, "_tools"))
+		goget.Env = append(os.Environ(), "GOBIN="+toolsdir)
 		if _, err := goget.Output(); err != nil {
 			eerr := &exec.ExitError{}
 			if !errors.As(err, &eerr) {
