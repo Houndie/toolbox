@@ -14,6 +14,11 @@ Enter Toolbox.
 
 Toolbox is a small tool meant to assist you with installing tools for your project.  The go team's recommendation is to use go modules to vendor your tools, and, in fact, this is what toolbox does under the hood.  However, using go to vendor your tools can be fiddly and prone to user-error.  Toolbox leverages the `go` binary (and optionally, `goimports`) to automate the most common use cases for you.
 
+Instaillation
+-------------
+
+`go get github.com/houndie/toolbox`
+
 How do I use it?
 ----------------
 
