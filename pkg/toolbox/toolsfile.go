@@ -1,4 +1,4 @@
-package main
+package toolbox
 
 import (
 	"errors"
@@ -9,8 +9,6 @@ import (
 	"os/exec"
 	"strings"
 	"text/template"
-
-	"github.com/spf13/viper"
 )
 
 var toolsTemplate = template.Must(template.New("tools_template").Parse(`// +build tools
@@ -23,9 +21,7 @@ import (
 	_ "{{ . }}" {{end}}
 )`))
 
-func readTools() ([]string, error) {
-	toolsfile := viper.GetString(toolsfileFlag)
-
+func readTools(toolsfile string) ([]string, error) {
 	if _, err := os.Stat(toolsfile); os.IsNotExist(err) {
 		return []string{}, nil
 	}
@@ -42,10 +38,7 @@ func readTools() ([]string, error) {
 	return tools, nil
 }
 
-func writeTools(tools []string) error {
-	toolsfile := viper.GetString(toolsfileFlag)
-	goimports := viper.GetString(goimportsFlag)
-
+func writeTools(tools []string, toolsfile string, goimports string) error {
 	file, err := os.OpenFile(toolsfile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		return fmt.Errorf("error opening tools file %s: %w", toolsfile, err)
@@ -60,7 +53,7 @@ func writeTools(tools []string) error {
 	}
 
 	if _, err := exec.LookPath(goimports); err == nil {
-		if _, err := exec.Command(goimports).Output(); err != nil {
+		if _, err := exec.Command(goimports, "-w", toolsfile).Output(); err != nil {
 			eerr := &exec.ExitError{}
 			if !errors.As(err, &eerr) {
 				return fmt.Errorf("error calling goimports: %w", err)

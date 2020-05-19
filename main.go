@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/Houndie/toolbox/pkg/toolbox"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -29,16 +30,16 @@ const toolsdirFlag = "tools_directory"
 const configfileFlag = "config_file"
 
 func init() {
-	rootCmd.PersistentFlags().String(goFlag, "go", "the \"go\" executable to use")
+	rootCmd.PersistentFlags().String(goFlag, toolbox.DefaultGo, "the \"go\" executable to use")
 	viper.BindPFlag(goFlag, rootCmd.PersistentFlags().Lookup(goFlag))
 
-	rootCmd.PersistentFlags().String(goimportsFlag, "goimports", "the \"goimports\" executable to use")
+	rootCmd.PersistentFlags().String(goimportsFlag, toolbox.DefaultGoimports, "the \"goimports\" executable to use")
 	viper.BindPFlag(goimportsFlag, rootCmd.PersistentFlags().Lookup(goimportsFlag))
 
-	rootCmd.PersistentFlags().String(toolsfileFlag, "tools.go", "the file in which to store tool data. This should end in a \".go\" extenstion so that go's module system picks it up.")
+	rootCmd.PersistentFlags().String(toolsfileFlag, toolbox.DefaultToolsfile, "the file in which to store tool data. This should end in a \".go\" extenstion so that go's module system picks it up.")
 	viper.BindPFlag(toolsfileFlag, rootCmd.PersistentFlags().Lookup(toolsfileFlag))
 
-	rootCmd.PersistentFlags().String(toolsdirFlag, "_tools", "the directory where tool binaries are stored")
+	rootCmd.PersistentFlags().String(toolsdirFlag, toolbox.DefaultToolsdir, "the directory where tool binaries are stored")
 	viper.BindPFlag(toolsdirFlag, rootCmd.PersistentFlags().Lookup(toolsdirFlag))
 
 	cfgFile := ""
@@ -70,4 +71,13 @@ func toolsDir() (string, error) {
 		return "", fmt.Errorf("error making absolute tools dir: %w", err)
 	}
 	return toolsdir, nil
+}
+
+func makeOptions() []toolbox.Option {
+	return []toolbox.Option{
+		toolbox.GoOption(viper.GetString(goFlag)),
+		toolbox.GoimportsOption(viper.GetString(goimportsFlag)),
+		toolbox.ToolsfileOption(viper.GetString(toolsfileFlag)),
+		toolbox.ToolsdirOption(viper.GetString(toolsdirFlag)),
+	}
 }
