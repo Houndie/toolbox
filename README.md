@@ -8,13 +8,13 @@ Why Toolbox?
 
 Have you ever used a code generation tool, only for git to tell you that you just changed 74 files in your repository?  It's likely that you and your teammates are using a different version of the tool!
 
-When muliple people use the same code base, you'll soon find that it's exceedingly useful for your whole team to have the same versions of the same tools.  This helps get your team up and running quickly, elimiates meaning churn when generating files, and prevents errors when behavior changes between versions.
+When multiple people use the same code base, you'll soon find that it's exceedingly useful for your whole team to have the same versions of the same tools.  This helps get your team up and running quickly, eliminates meaning churn when generating files, and prevents errors when behavior changes between versions.
 
 Enter Toolbox.
 
 Toolbox is a small tool meant to assist you with installing tools for your project.  The go team's recommendation is to use go modules to vendor your tools, and, in fact, this is what toolbox does under the hood.  However, using go to vendor your tools can be fiddly and prone to user-error.  Toolbox leverages the `go` binary (and optionally, `goimports`) to automate the most common use cases for you.
 
-Instaillation
+Instillation
 -------------
 
 `go get github.com/houndie/toolbox`
@@ -41,7 +41,7 @@ toolbox sync
 toolbox add golang.org/x/tools/cmd/stringer
 
 # Use the stringer tool
-toolbox do stringer -type=Pill
+toolbox do -- stringer -type=Pill
 
 # Change stringer to a different version
 toolbox add golang.org/x/tools/cmd/stringer v0.4
@@ -57,7 +57,7 @@ How does it work?
 
 *Warning, boring implementation details ahead*
 
-In sort, this tool automates the best practices put forth by the go team [here](https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module) and [here](https://github.com/go-modules-by-example/index/blob/master/010_tools/README.md).
+In short, this tool automates the best practices put forth by the go team [here](https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module) and [here](https://github.com/go-modules-by-example/index/blob/master/010_tools/README.md).
 
 Whenever you add a tool to your repository, toolbox calls `go get` with a modified `GOBIN` to download the tool into the `_tools` directory.  A project-local directory is used so that the versions of tools that affect one project, do not affect another project.  `go get` automatically records the version of the tool being used in your `go.mod` file, which is used later when syncing tools.  Toolbox also adds your tool to the import list in `tools.go`, the whole purpose of which is to store a list of tools so that toolbox and go modules knows what tools you're using.  The tools are recorded in an import list in a `.go` file so that go modules knows that this a dependency of your project, and won't remove them from `go.mod` on your next `go mod tidy`.  `tools.go` contains a build tag so that it is never actually built into your project.  If goimports is installed, it will also be called on the `tools.go` file, so that you don't accidentally automatically change it just by viewing it in a text editor.
 
@@ -73,6 +73,11 @@ Configuration
 The executables used for `go` and `goimports` can both be specified with flags.  Similarly, you can also customize the names for the `tools.go` and `_tools` folder.
 
 `toolbox` is built on [viper](https://github.com/spf13/viper) and [cobra](https://github.com/spf13/cobra), and therefore most commandline flags can also be configured in a configuration file as well. By default, toolbox looks for the configuration file `.toolbox` with either an `ini`, `json`, `yaml`, or `toml` extension.  You can also specify a configuration file on the commandline.
+
+Library
+-------
+
+Toolbox can also be used as a library, with import path `github.com/Houndie/toolbox/pkg/toolbox`.  This is useful if you want to use toolbox in a [magefile](https://github.com/magefile/mage), or another go scripting system.
 
 Thanks
 ------
