@@ -60,6 +60,7 @@ func CommandOpts(command string, args []string, options ...Option) (*exec.Cmd, e
 	// GOBIN is set so that tools that install other tools still prefer the tool directory
 	cmd.Env = append(os.Environ(),
 		"GOBIN="+absToolsdir,
+		"PATH="+absToolsdir+string(filepath.ListSeparator)+os.Getenv("PATH"),
 	)
 
 	return cmd, nil
