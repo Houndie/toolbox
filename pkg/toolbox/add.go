@@ -15,7 +15,10 @@ func Add(packageName string, options ...Option) error {
 
 // AddVer adds a new tool found at packageName with a specific version to the vendoring system
 func AddVer(packageName, version string, options ...Option) error {
-	p := parseOptions(options...)
+	p, err := parseOptions(options...)
+	if err != nil {
+		return fmt.Errorf("error parsing options: %w", err)
+	}
 
 	goget := exec.Command(p.goBinary, "get", packageName)
 	absToolsdir, err := filepath.Abs(p.toolsdirName)

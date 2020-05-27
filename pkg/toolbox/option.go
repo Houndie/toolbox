@@ -1,27 +1,42 @@
 package toolbox
 
+import (
+	"fmt"
+	"os/exec"
+	"path/filepath"
+)
+
 // The default option values
 const (
-	DefaultGo        = "go"
-	DefaultGoimports = "goimports"
-	DefaultToolsfile = "tools.go"
-	DefaultToolsdir  = "_tools"
+	defaultGo        = "go"
+	defaultGoimports = "goimports"
 )
+
+func defaultBasedir(goCommand string) (string, error) {
+	out, err := exec.Command(goCommand, "env", "GOMOD").Output()
+	if err != nil {
+		return "", fmt.Errorf("error finding module root: %w", err)
+	}
+	if string(out) == "" {
+		return "", fmt.Errorf("no go module found, please initialize with \"go mod init\"")
+	}
+	return filepath.Dir(string(out)), nil
+}
+
+func defaultToolsfile(basedir string) string {
+	return filepath.Join(basedir, "tools.go")
+}
+
+func defaultToolsdir(basedir string) string {
+	return filepath.Join(basedir, "_tools")
+}
 
 type parsedOptions struct {
 	goBinary        string
 	goimportsBinary string
 	toolsfileName   string
 	toolsdirName    string
-}
-
-func defaultParsedOptions() *parsedOptions {
-	return &parsedOptions{
-		goBinary:        DefaultGo,
-		goimportsBinary: DefaultGoimports,
-		toolsfileName:   DefaultToolsfile,
-		toolsdirName:    DefaultToolsdir,
-	}
+	basedirName     string
 }
 
 // Option is an optional modifier to toolbox's default behavior
@@ -85,10 +100,44 @@ func ToolsdirOption(toolsdirName string) Option {
 	return &toolsdirOption{toolsdirName: toolsdirName}
 }
 
-func parseOptions(options ...Option) *parsedOptions {
-	p := defaultParsedOptions()
+type basedirOption struct {
+	basedirName string
+}
+
+func (o *basedirOption) apply(p *parsedOptions) *parsedOptions {
+	p.basedirName = o.basedirName
+	return p
+}
+
+// TooldirOption changes the default name/path of the directory used to vendor tools
+func BasedirOption(basedirName string) Option {
+	return &basedirOption{basedirName: basedirName}
+}
+
+func parseOptions(options ...Option) (*parsedOptions, error) {
+	p := &parsedOptions{}
 	for _, option := range options {
 		p = option.apply(p)
 	}
-	return p
+
+	if p.goBinary == "" {
+		p.goBinary = defaultGo
+	}
+	if p.goimportsBinary == "" {
+		p.goimportsBinary = defaultGoimports
+	}
+	if p.basedirName == "" {
+		var err error
+		p.basedirName, err = defaultBasedir(p.goBinary)
+		if err != nil {
+			return nil, fmt.Errorf("error determining default base directory: %w", err)
+		}
+	}
+	if p.toolsdirName == "" {
+		p.toolsdirName = defaultToolsdir(p.basedirName)
+	}
+	if p.toolsfileName == "" {
+		p.toolsfileName = defaultToolsfile(p.basedirName)
+	}
+	return p, nil
 }

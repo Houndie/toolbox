@@ -11,7 +11,10 @@ import (
 
 // Remove stops tracking the tool from packageName in our vendoring system.
 func Remove(packageName string, options ...Option) error {
-	p := parseOptions(options...)
+	p, err := parseOptions(options...)
+	if err != nil {
+		return fmt.Errorf("error parsing options: %w", err)
+	}
 
 	tools, err := readTools(p.toolsfileName)
 	if err != nil {

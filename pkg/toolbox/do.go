@@ -40,7 +40,10 @@ func Command(command string, args ...string) (*exec.Cmd, error) {
 
 // CommandOpts creates an exec.Cmd, modifying the environment and run binary name to reflect the vendored tools, using the given options.
 func CommandOpts(command string, args []string, options ...Option) (*exec.Cmd, error) {
-	p := parseOptions(options...)
+	p, err := parseOptions(options...)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing options: %w", err)
+	}
 
 	absToolsdir, err := filepath.Abs(p.toolsdirName)
 	if err != nil {

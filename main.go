@@ -28,18 +28,22 @@ const goimportsFlag = "goimports"
 const toolsfileFlag = "tools_file"
 const toolsdirFlag = "tools_directory"
 const configfileFlag = "config_file"
+const basedirFlag = "base_dir"
 
 func init() {
-	rootCmd.PersistentFlags().String(goFlag, toolbox.DefaultGo, "the \"go\" executable to use")
+	rootCmd.PersistentFlags().String(goFlag, "", "The \"go\" executable to use.")
 	viper.BindPFlag(goFlag, rootCmd.PersistentFlags().Lookup(goFlag))
 
-	rootCmd.PersistentFlags().String(goimportsFlag, toolbox.DefaultGoimports, "the \"goimports\" executable to use")
+	rootCmd.PersistentFlags().String(goimportsFlag, "", "the \"goimports\" executable to use.")
 	viper.BindPFlag(goimportsFlag, rootCmd.PersistentFlags().Lookup(goimportsFlag))
 
-	rootCmd.PersistentFlags().String(toolsfileFlag, toolbox.DefaultToolsfile, "the file in which to store tool data. This should end in a \".go\" extenstion so that go's module system picks it up.")
+	rootCmd.PersistentFlags().String(basedirFlag, "", "the base directory for automatically calculating where to put the tools file and tools directory.  Defaults to the directory where your go.mod file is.")
+	viper.BindPFlag(basedirFlag, rootCmd.PersistentFlags().Lookup(basedirFlag))
+
+	rootCmd.PersistentFlags().String(toolsfileFlag, "", "the file in which to store tool data. This should end in a \".go\" extenstion so that go's module system picks it up. Defaults to \"tools.go\" in the the base directory.")
 	viper.BindPFlag(toolsfileFlag, rootCmd.PersistentFlags().Lookup(toolsfileFlag))
 
-	rootCmd.PersistentFlags().String(toolsdirFlag, toolbox.DefaultToolsdir, "the directory where tool binaries are stored")
+	rootCmd.PersistentFlags().String(toolsdirFlag, "", "the directory where tool binaries are stored.  Defaults to \"_tools\" in the base directory")
 	viper.BindPFlag(toolsdirFlag, rootCmd.PersistentFlags().Lookup(toolsdirFlag))
 
 	cfgFile := ""
@@ -74,10 +78,21 @@ func toolsDir() (string, error) {
 }
 
 func makeOptions() []toolbox.Option {
-	return []toolbox.Option{
-		toolbox.GoOption(viper.GetString(goFlag)),
-		toolbox.GoimportsOption(viper.GetString(goimportsFlag)),
-		toolbox.ToolsfileOption(viper.GetString(toolsfileFlag)),
-		toolbox.ToolsdirOption(viper.GetString(toolsdirFlag)),
+	options := []toolbox.Option{}
+	if goOption := viper.GetString(goFlag); goOption != "" {
+		options = append(options, toolbox.GoOption(goOption))
 	}
+	if goimportsOption := viper.GetString(goimportsFlag); goimportsOption != "" {
+		options = append(options, toolbox.GoimportsOption(goimportsOption))
+	}
+	if basedirOption := viper.GetString(basedirFlag); basedirOption != "" {
+		options = append(options, toolbox.BasedirOption(basedirOption))
+	}
+	if toolsfileOption := viper.GetString(toolsfileFlag); toolsfileOption != "" {
+		options = append(options, toolbox.ToolsfileOption(toolsfileOption))
+	}
+	if toolsdirOption := viper.GetString(toolsdirFlag); toolsdirOption != "" {
+		options = append(options, toolbox.ToolsdirOption(toolsdirOption))
+	}
+	return options
 }

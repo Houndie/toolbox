@@ -10,7 +10,10 @@ import (
 
 // Sync interates through all tools that we're vendoring, and ensures that all of them are installed, and at the correct version.
 func Sync(options ...Option) error {
-	p := parseOptions(options...)
+	p, err := parseOptions(options...)
+	if err != nil {
+		return fmt.Errorf("error parsing options: %w", err)
+	}
 	tools, err := readTools(p.toolsfileName)
 	if err != nil {
 		return err
