@@ -17,6 +17,20 @@ func Add(packageName string, options ...Option) error {
 func AddVer(packageName, version string, options ...Option) error {
 	p := parseOptions(options...)
 
+	goget := exec.Command(p.goBinary, "get", packageName)
+	absToolsdir, err := filepath.Abs(p.toolsdirName)
+	if err != nil {
+		return fmt.Errorf("error finding absolute path to toolsdir %s: %w", p.toolsdirName, err)
+	}
+	goget.Env = append(os.Environ(), "GOBIN="+absToolsdir)
+	if _, err := goget.Output(); err != nil {
+		eerr := &exec.ExitError{}
+		if !errors.As(err, &eerr) {
+			return fmt.Errorf("error calling go get: %w", err)
+		}
+		return fmt.Errorf("error calling go get: %s: %w", string(eerr.Stderr), err)
+	}
+
 	tools, err := readTools(p.toolsfileName)
 	if err != nil {
 		return err
@@ -40,18 +54,5 @@ func AddVer(packageName, version string, options ...Option) error {
 		packageName = packageName + "@" + version
 	}
 
-	goget := exec.Command(p.goBinary, "get", packageName)
-	absToolsdir, err := filepath.Abs(p.toolsdirName)
-	if err != nil {
-		return fmt.Errorf("error finding absolute path to toolsdir %s: %w", p.toolsdirName, err)
-	}
-	goget.Env = append(os.Environ(), "GOBIN="+absToolsdir)
-	if _, err := goget.Output(); err != nil {
-		eerr := &exec.ExitError{}
-		if !errors.As(err, &eerr) {
-			return fmt.Errorf("error calling go get: %w", err)
-		}
-		return fmt.Errorf("error calling go get: %s: %w", string(eerr.Stderr), err)
-	}
 	return nil
 }
