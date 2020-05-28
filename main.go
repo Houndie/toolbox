@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -30,6 +31,7 @@ const toolsdirFlag = "tools_directory"
 const configfileFlag = "config_file"
 const basedirFlag = "base_dir"
 const buildFlagsFlag = "build_flags"
+const verboseFlag = "verbose"
 
 func init() {
 	rootCmd.PersistentFlags().String(goFlag, "", "The \"go\" executable to use.")
@@ -49,6 +51,9 @@ func init() {
 
 	rootCmd.PersistentFlags().String(buildFlagsFlag, "", "Any build flags to use when adding a new tool. These are stored and used when syncing the tool in the future.")
 	viper.BindPFlag(buildFlagsFlag, rootCmd.PersistentFlags().Lookup(buildFlagsFlag))
+
+	rootCmd.PersistentFlags().BoolP(verboseFlag, "v", false, "Increased outout")
+	viper.BindPFlag(verboseFlag, rootCmd.PersistentFlags().Lookup(verboseFlag))
 
 	cfgFile := ""
 	rootCmd.PersistentFlags().StringVar(&cfgFile, configfileFlag, "", "the location of a config file to load. By default, looks for \".toolbox.ini\", \".toolbox.json\", \".toolbox.yaml\", or \".toolbox.toml\"")
@@ -100,6 +105,9 @@ func makeOptions() []toolbox.Option {
 	}
 	if buildFlagsOption := viper.GetString(buildFlagsFlag); buildFlagsOption != "" {
 		options = append(options, toolbox.BuildFlagsOption(buildFlagsOption))
+	}
+	if verboseOption := viper.GetBool(verboseFlag); verboseOption {
+		options = append(options, toolbox.LoggerOption(log.New(os.Stdout, "", 0)))
 	}
 
 	return options

@@ -2,7 +2,6 @@ package toolbox
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"go/parser"
 	"go/token"
@@ -32,14 +31,15 @@ type toolTemplate struct {
 	Comment string
 }
 
-func readTools(toolsfile string) ([]*tool, error) {
-	if _, err := os.Stat(toolsfile); os.IsNotExist(err) {
+func readTools(p *parsedOptions) ([]*tool, error) {
+	if _, err := os.Stat(p.toolsfileName); os.IsNotExist(err) {
 		return nil, nil
 	}
 
-	file, err := parser.ParseFile(token.NewFileSet(), toolsfile, nil, parser.ImportsOnly)
+	p.logger.Printf("parsing toolsfile %s", p.toolsfileName)
+	file, err := parser.ParseFile(token.NewFileSet(), p.toolsfileName, nil, parser.ImportsOnly)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing tools file %s: %w", toolsfile, err)
+		return nil, fmt.Errorf("error parsing tools file %s: %w", p.toolsfileName, err)
 	}
 
 	tools := make([]*tool, len(file.Imports))
@@ -53,10 +53,10 @@ func readTools(toolsfile string) ([]*tool, error) {
 	return tools, nil
 }
 
-func writeTools(tools []*tool, toolsfile string, goimports string) error {
-	file, err := os.OpenFile(toolsfile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+func writeTools(tools []*tool, p *parsedOptions) error {
+	file, err := os.OpenFile(p.toolsfileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		return fmt.Errorf("error opening tools file %s: %w", toolsfile, err)
+		return fmt.Errorf("error opening tools file %s: %w", p.toolsfileName, err)
 	}
 	defer file.Close()
 
@@ -72,20 +72,21 @@ func writeTools(tools []*tool, toolsfile string, goimports string) error {
 		}
 	}
 
+	p.logger.Printf("writing toolsfile %s", p.toolsfileName)
 	if err := toolsTemplate.Execute(file, toolTemplates); err != nil {
-		return fmt.Errorf("error writing data to toolsfile %s: %w", toolsfile, err)
+		return fmt.Errorf("error writing data to toolsfile %s: %w", p.toolsfileName, err)
 	}
 	if err := file.Close(); err != nil {
-		return fmt.Errorf("error closing toolsfile %s: %w", toolsfile, err)
+		return fmt.Errorf("error closing toolsfile %s: %w", p.toolsfileName, err)
 	}
 
-	if _, err := exec.LookPath(goimports); err == nil {
-		if _, err := exec.Command(goimports, "-w", toolsfile).Output(); err != nil {
-			eerr := &exec.ExitError{}
-			if !errors.As(err, &eerr) {
-				return fmt.Errorf("error calling goimports: %w", err)
-			}
-			return fmt.Errorf("error calling goimports: %s: %w", string(eerr.Stderr), err)
+	if _, err := exec.LookPath(p.goimportsBinary); err == nil {
+		goimports := exec.Command(p.goimportsBinary, "-v", "-w", p.toolsfileName)
+		goimports.Stdout = newLogWriter(p.logger)
+		goimports.Stderr = newLogWriter(p.logger)
+		p.logger.Printf("calling \"%s\"", strings.Join(goimports.Args, " "))
+		if err := goimports.Run(); err != nil {
+			return fmt.Errorf("error calling goimports: %w", err)
 		}
 	}
 

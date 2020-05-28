@@ -31,6 +31,10 @@ func defaultToolsdir(basedir string) string {
 	return filepath.Join(basedir, "_tools")
 }
 
+type defaultLogger struct{}
+
+func (*defaultLogger) Printf(string, ...interface{}) {}
+
 type parsedOptions struct {
 	goBinary        string
 	goimportsBinary string
@@ -38,6 +42,7 @@ type parsedOptions struct {
 	toolsdirName    string
 	basedirName     string
 	buildFlags      string
+	logger          Logger
 }
 
 // Option is an optional modifier to toolbox's default behavior
@@ -129,6 +134,39 @@ func BuildFlagsOption(buildFlags string) Option {
 	return &buildFlagsOption{buildFlags: buildFlags}
 }
 
+type Logger interface {
+	Printf(string, ...interface{})
+}
+
+type logWriter struct {
+	logger Logger
+}
+
+func (w *logWriter) Write(p []byte) (int, error) {
+	w.logger.Printf(string(p))
+	return len(p), nil
+}
+
+func newLogWriter(logger Logger) *logWriter {
+	return &logWriter{
+		logger: logger,
+	}
+}
+
+type loggerOption struct {
+	logger Logger
+}
+
+func (o *loggerOption) apply(p *parsedOptions) *parsedOptions {
+	p.logger = o.logger
+	return p
+}
+
+// Logger option passes a logger to capture output from the subcommands
+func LoggerOption(logger Logger) Option {
+	return &loggerOption{logger: logger}
+}
+
 func parseOptions(options ...Option) (*parsedOptions, error) {
 	p := &parsedOptions{}
 	for _, option := range options {
@@ -153,6 +191,9 @@ func parseOptions(options ...Option) (*parsedOptions, error) {
 	}
 	if p.toolsfileName == "" {
 		p.toolsfileName = defaultToolsfile(p.basedirName)
+	}
+	if p.logger == nil {
+		p.logger = &defaultLogger{}
 	}
 	return p, nil
 }

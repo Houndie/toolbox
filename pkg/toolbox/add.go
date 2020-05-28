@@ -1,7 +1,6 @@
 package toolbox
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -26,7 +25,7 @@ func AddVer(packageName, version string, options ...Option) error {
 		pkgVer = packageName + "@" + version
 	}
 
-	args := []string{"get"}
+	args := []string{"get", "-v"}
 	if p.buildFlags != "" {
 		args = append(args, strings.Fields(p.buildFlags)...)
 	}
@@ -38,15 +37,14 @@ func AddVer(packageName, version string, options ...Option) error {
 		return fmt.Errorf("error finding absolute path to toolsdir %s: %w", p.toolsdirName, err)
 	}
 	goget.Env = append(os.Environ(), "GOBIN="+absToolsdir)
-	if _, err := goget.Output(); err != nil {
-		eerr := &exec.ExitError{}
-		if !errors.As(err, &eerr) {
-			return fmt.Errorf("error calling go get: %w", err)
-		}
-		return fmt.Errorf("error calling go get: %s: %w", string(eerr.Stderr), err)
+	p.logger.Printf("calling \"%s\", with GOBIN=%s", strings.Join(goget.Args, " "), absToolsdir)
+	goget.Stdout = newLogWriter(p.logger)
+	goget.Stderr = newLogWriter(p.logger)
+	if err := goget.Run(); err != nil {
+		return fmt.Errorf("error calling go get: %w", err)
 	}
 
-	tools, err := readTools(p.toolsfileName)
+	tools, err := readTools(p)
 	if err != nil {
 		return err
 	}
@@ -66,7 +64,7 @@ func AddVer(packageName, version string, options ...Option) error {
 			BuildFlags: p.buildFlags,
 		}
 		tools = append(tools, newTool)
-		if err := writeTools(tools, p.toolsfileName, p.goimportsBinary); err != nil {
+		if err := writeTools(tools, p); err != nil {
 			return err
 		}
 	}

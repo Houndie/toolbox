@@ -1,7 +1,6 @@
 package toolbox
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -15,29 +14,28 @@ func Sync(options ...Option) error {
 	if err != nil {
 		return fmt.Errorf("error parsing options: %w", err)
 	}
-	tools, err := readTools(p.toolsfileName)
+	tools, err := readTools(p)
 	if err != nil {
 		return err
 	}
 
 	for _, t := range tools {
-		args := []string{"install"}
+		args := []string{"install", "-v"}
 		if p.buildFlags != "" {
 			args = append(args, strings.Fields(p.buildFlags)...)
 		}
 		args = append(args, t.Pkg)
 		goinstall := exec.Command(p.goBinary, "install", t.Pkg)
+		goinstall.Stdout = newLogWriter(p.logger)
+		goinstall.Stderr = newLogWriter(p.logger)
 		absToolsdir, err := filepath.Abs(p.toolsdirName)
 		if err != nil {
 			return fmt.Errorf("error finding absolute path to toolsdir %s: %w", p.toolsdirName, err)
 		}
 		goinstall.Env = append(os.Environ(), "GOBIN="+absToolsdir)
-		if _, err := goinstall.Output(); err != nil {
-			eerr := &exec.ExitError{}
-			if !errors.As(err, &eerr) {
-				return fmt.Errorf("error calling go install: %w", err)
-			}
-			return fmt.Errorf("error calling go install: %s: %w", string(eerr.Stderr), err)
+		p.logger.Printf("running \"%s\", with GOBIN=%s", strings.Join(goinstall.Args, " "), absToolsdir)
+		if err := goinstall.Run(); err != nil {
+			return fmt.Errorf("error calling go install: %w", err)
 		}
 	}
 
