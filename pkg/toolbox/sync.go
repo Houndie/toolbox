@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/kballard/go-shellquote"
 )
 
 // Sync interates through all tools that we're vendoring, and ensures that all of them are installed, and at the correct version.
@@ -21,11 +23,15 @@ func Sync(options ...Option) error {
 
 	for _, t := range tools {
 		args := []string{"install", "-v"}
-		if p.buildFlags != "" {
-			args = append(args, strings.Fields(p.buildFlags)...)
+		if t.BuildFlags != "" {
+			split, err := shellquote.Split(p.buildFlags)
+			if err != nil {
+				return fmt.Errorf("error splitting args: %w", err)
+			}
+			args = append(args, split...)
 		}
 		args = append(args, t.Pkg)
-		goinstall := exec.Command(p.goBinary, "install", t.Pkg)
+		goinstall := exec.Command(p.goBinary, args...)
 		goinstall.Stdout = newLogWriter(p.logger)
 		goinstall.Stderr = newLogWriter(p.logger)
 		absToolsdir, err := filepath.Abs(p.toolsdirName)

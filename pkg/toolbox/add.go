@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/kballard/go-shellquote"
 )
 
 // Add adds a new tool found at packageName to the vendoring system
@@ -27,7 +29,11 @@ func AddVer(packageName, version string, options ...Option) error {
 
 	args := []string{"get", "-v"}
 	if p.buildFlags != "" {
-		args = append(args, strings.Fields(p.buildFlags)...)
+		split, err := shellquote.Split(p.buildFlags)
+		if err != nil {
+			return fmt.Errorf("error splitting args: %w", err)
+		}
+		args = append(args, split...)
 	}
 	args = append(args, pkgVer)
 
@@ -50,20 +56,25 @@ func AddVer(packageName, version string, options ...Option) error {
 	}
 
 	needsUpdate := true
+	found := false
 	for _, tool := range tools {
 		if tool.Pkg == packageName {
 			if tool.BuildFlags == p.buildFlags {
 				needsUpdate = false
+			} else {
+				tool.BuildFlags = p.buildFlags
 			}
+			found = true
 			break
 		}
 	}
-	if needsUpdate {
-		newTool := &tool{
+	if !found {
+		tools = append(tools, &tool{
 			Pkg:        packageName,
 			BuildFlags: p.buildFlags,
-		}
-		tools = append(tools, newTool)
+		})
+	}
+	if needsUpdate {
 		if err := writeTools(tools, p); err != nil {
 			return err
 		}

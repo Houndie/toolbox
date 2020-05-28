@@ -37,7 +37,7 @@ func readTools(p *parsedOptions) ([]*tool, error) {
 	}
 
 	p.logger.Printf("parsing toolsfile %s", p.toolsfileName)
-	file, err := parser.ParseFile(token.NewFileSet(), p.toolsfileName, nil, parser.ImportsOnly)
+	file, err := parser.ParseFile(token.NewFileSet(), p.toolsfileName, nil, parser.ParseComments)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing tools file %s: %w", p.toolsfileName, err)
 	}
@@ -46,7 +46,9 @@ func readTools(p *parsedOptions) ([]*tool, error) {
 	for i, imp := range file.Imports {
 		tools[i] = &tool{}
 		if imp.Comment.Text() != "" {
-			json.Unmarshal([]byte(imp.Comment.Text()), &tools[i])
+			if err := json.Unmarshal([]byte(imp.Comment.Text()), &tools[i]); err != nil {
+				return nil, fmt.Errorf("error parsing tool comment as json: %w", err)
+			}
 		}
 		tools[i].Pkg = strings.TrimSuffix(strings.TrimPrefix(imp.Path.Value, "\""), "\"")
 	}
