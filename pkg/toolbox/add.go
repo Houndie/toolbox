@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 // Add adds a new tool found at packageName to the vendoring system
@@ -20,7 +21,18 @@ func AddVer(packageName, version string, options ...Option) error {
 		return fmt.Errorf("error parsing options: %w", err)
 	}
 
-	goget := exec.Command(p.goBinary, "get", packageName)
+	pkgVer := packageName
+	if version != "" {
+		pkgVer = packageName + "@" + version
+	}
+
+	args := []string{"get"}
+	if p.buildFlags != "" {
+		args = append(args, strings.Fields(p.buildFlags)...)
+	}
+	args = append(args, pkgVer)
+
+	goget := exec.Command(p.goBinary, args...)
 	absToolsdir, err := filepath.Abs(p.toolsdirName)
 	if err != nil {
 		return fmt.Errorf("error finding absolute path to toolsdir %s: %w", p.toolsdirName, err)
@@ -39,22 +51,24 @@ func AddVer(packageName, version string, options ...Option) error {
 		return err
 	}
 
-	found := false
+	needsUpdate := true
 	for _, tool := range tools {
-		if tool == packageName {
-			found = true
+		if tool.Pkg == packageName {
+			if tool.BuildFlags == p.buildFlags {
+				needsUpdate = false
+			}
 			break
 		}
 	}
-	if !found {
-		tools = append(tools, packageName)
+	if needsUpdate {
+		newTool := &tool{
+			Pkg:        packageName,
+			BuildFlags: p.buildFlags,
+		}
+		tools = append(tools, newTool)
 		if err := writeTools(tools, p.toolsfileName, p.goimportsBinary); err != nil {
 			return err
 		}
-	}
-
-	if version != "" {
-		packageName = packageName + "@" + version
 	}
 
 	return nil

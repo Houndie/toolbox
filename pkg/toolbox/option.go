@@ -37,6 +37,7 @@ type parsedOptions struct {
 	toolsfileName   string
 	toolsdirName    string
 	basedirName     string
+	buildFlags      string
 }
 
 // Option is an optional modifier to toolbox's default behavior
@@ -109,9 +110,23 @@ func (o *basedirOption) apply(p *parsedOptions) *parsedOptions {
 	return p
 }
 
-// TooldirOption changes the default name/path of the directory used to vendor tools
+// BasedirOption changes the directory when using the default toolsfile and directory
 func BasedirOption(basedirName string) Option {
 	return &basedirOption{basedirName: basedirName}
+}
+
+type buildFlagsOption struct {
+	buildFlags string
+}
+
+func (o *buildFlagsOption) apply(p *parsedOptions) *parsedOptions {
+	p.buildFlags = o.buildFlags
+	return p
+}
+
+// BuildFlagsOption passes flags to go get and go install
+func BuildFlagsOption(buildFlags string) Option {
+	return &buildFlagsOption{buildFlags: buildFlags}
 }
 
 func parseOptions(options ...Option) (*parsedOptions, error) {

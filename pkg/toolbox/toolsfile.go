@@ -1,6 +1,7 @@
 package toolbox
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go/parser"
@@ -18,12 +19,22 @@ package toolbox
 
 import (
 	{{range .}}
-	_ "{{ . }}" {{end}}
+	_ "{{ .Pkg }}" {{if ne .Comment "{}" }} //{{ .Comment }} {{end}}{{end}}
 )`))
 
-func readTools(toolsfile string) ([]string, error) {
+type tool struct {
+	Pkg        string `json:"-"`
+	BuildFlags string `json:"build_flags,omitempty"`
+}
+
+type toolTemplate struct {
+	Pkg     string
+	Comment string
+}
+
+func readTools(toolsfile string) ([]*tool, error) {
 	if _, err := os.Stat(toolsfile); os.IsNotExist(err) {
-		return []string{}, nil
+		return nil, nil
 	}
 
 	file, err := parser.ParseFile(token.NewFileSet(), toolsfile, nil, parser.ImportsOnly)
@@ -31,21 +42,37 @@ func readTools(toolsfile string) ([]string, error) {
 		return nil, fmt.Errorf("error parsing tools file %s: %w", toolsfile, err)
 	}
 
-	tools := make([]string, len(file.Imports))
+	tools := make([]*tool, len(file.Imports))
 	for i, imp := range file.Imports {
-		tools[i] = strings.TrimSuffix(strings.TrimPrefix(imp.Path.Value, "\""), "\"")
+		tools[i] = &tool{}
+		if imp.Comment.Text() != "" {
+			json.Unmarshal([]byte(imp.Comment.Text()), &tools[i])
+		}
+		tools[i].Pkg = strings.TrimSuffix(strings.TrimPrefix(imp.Path.Value, "\""), "\"")
 	}
 	return tools, nil
 }
 
-func writeTools(tools []string, toolsfile string, goimports string) error {
+func writeTools(tools []*tool, toolsfile string, goimports string) error {
 	file, err := os.OpenFile(toolsfile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		return fmt.Errorf("error opening tools file %s: %w", toolsfile, err)
 	}
 	defer file.Close()
 
-	if err := toolsTemplate.Execute(file, tools); err != nil {
+	toolTemplates := make([]*toolTemplate, len(tools))
+	for i, t := range tools {
+		j, err := json.Marshal(t)
+		if err != nil {
+			return fmt.Errorf("error generating toolsfile comment: %w", err)
+		}
+		toolTemplates[i] = &toolTemplate{
+			Pkg:     t.Pkg,
+			Comment: string(j),
+		}
+	}
+
+	if err := toolsTemplate.Execute(file, toolTemplates); err != nil {
 		return fmt.Errorf("error writing data to toolsfile %s: %w", toolsfile, err)
 	}
 	if err := file.Close(); err != nil {

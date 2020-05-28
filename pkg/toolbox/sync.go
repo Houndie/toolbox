@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 // Sync interates through all tools that we're vendoring, and ensures that all of them are installed, and at the correct version.
@@ -19,8 +20,13 @@ func Sync(options ...Option) error {
 		return err
 	}
 
-	for _, tool := range tools {
-		goinstall := exec.Command(p.goBinary, "install", tool)
+	for _, t := range tools {
+		args := []string{"install"}
+		if p.buildFlags != "" {
+			args = append(args, strings.Fields(p.buildFlags)...)
+		}
+		args = append(args, t.Pkg)
+		goinstall := exec.Command(p.goBinary, "install", t.Pkg)
 		absToolsdir, err := filepath.Abs(p.toolsdirName)
 		if err != nil {
 			return fmt.Errorf("error finding absolute path to toolsdir %s: %w", p.toolsdirName, err)

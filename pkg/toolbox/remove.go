@@ -22,7 +22,7 @@ func Remove(packageName string, options ...Option) error {
 	}
 
 	for i, tool := range tools {
-		if tool == packageName {
+		if tool.Pkg == packageName {
 			tools[len(tools)-1], tools[i] = tools[i], tools[len(tools)-1]
 			if err := writeTools(tools[:len(tools)-1], p.toolsfileName, p.goimportsBinary); err != nil {
 				return err
