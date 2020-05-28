@@ -6,7 +6,8 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"strings"
+
+	"github.com/kballard/go-shellquote"
 )
 
 // Remove stops tracking the tool from packageName in our vendoring system.
@@ -44,7 +45,7 @@ func Remove(packageName string, options ...Option) error {
 	gomod := exec.Command(p.goBinary, "mod", "tidy", "-v")
 	gomod.Stdout = newLogWriter(p.logger)
 	gomod.Stderr = newLogWriter(p.logger)
-	p.logger.Printf("calling \"%s\"", strings.Join(gomod.Args, " "))
+	p.logger.Printf("calling \"%s\"", shellquote.Join(gomod.Args...))
 	if err := gomod.Run(); err != nil {
 		return fmt.Errorf("error calling go mod tidy: %w", err)
 	}

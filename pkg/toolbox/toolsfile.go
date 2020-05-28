@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"strings"
 	"text/template"
+
+	"github.com/kballard/go-shellquote"
 )
 
 var toolsTemplate = template.Must(template.New("tools_template").Parse(`// +build tools
@@ -86,7 +88,7 @@ func writeTools(tools []*tool, p *parsedOptions) error {
 		goimports := exec.Command(p.goimportsBinary, "-v", "-w", p.toolsfileName)
 		goimports.Stdout = newLogWriter(p.logger)
 		goimports.Stderr = newLogWriter(p.logger)
-		p.logger.Printf("calling \"%s\"", strings.Join(goimports.Args, " "))
+		p.logger.Printf("calling \"%s\"", shellquote.Join(goimports.Args...))
 		if err := goimports.Run(); err != nil {
 			return fmt.Errorf("error calling goimports: %w", err)
 		}

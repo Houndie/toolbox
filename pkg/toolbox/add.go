@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/kballard/go-shellquote"
 )
@@ -43,7 +42,7 @@ func AddVer(packageName, version string, options ...Option) error {
 		return fmt.Errorf("error finding absolute path to toolsdir %s: %w", p.toolsdirName, err)
 	}
 	goget.Env = append(os.Environ(), "GOBIN="+absToolsdir)
-	p.logger.Printf("calling \"%s\", with GOBIN=%s", strings.Join(goget.Args, " "), absToolsdir)
+	p.logger.Printf("calling \"%s\", with GOBIN=%s", shellquote.Join(goget.Args...), absToolsdir)
 	goget.Stdout = newLogWriter(p.logger)
 	goget.Stderr = newLogWriter(p.logger)
 	if err := goget.Run(); err != nil {

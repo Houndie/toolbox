@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/kballard/go-shellquote"
 )
@@ -39,7 +38,7 @@ func Sync(options ...Option) error {
 			return fmt.Errorf("error finding absolute path to toolsdir %s: %w", p.toolsdirName, err)
 		}
 		goinstall.Env = append(os.Environ(), "GOBIN="+absToolsdir)
-		p.logger.Printf("running \"%s\", with GOBIN=%s", strings.Join(goinstall.Args, " "), absToolsdir)
+		p.logger.Printf("running \"%s\", with GOBIN=%s", shellquote.Join(goinstall.Args...), absToolsdir)
 		if err := goinstall.Run(); err != nil {
 			return fmt.Errorf("error calling go install: %w", err)
 		}
