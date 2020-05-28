@@ -24,7 +24,7 @@ func Sync(options ...Option) error {
 	for _, t := range tools {
 		args := []string{"install", "-v"}
 		if t.BuildFlags != "" {
-			split, err := shellquote.Split(p.buildFlags)
+			split, err := shellquote.Split(t.BuildFlags)
 			if err != nil {
 				return fmt.Errorf("error splitting args: %w", err)
 			}
