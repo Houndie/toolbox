@@ -22,12 +22,13 @@ Instillation
 How do I use it?
 ----------------
 
-Toolbox has four main commands:
+Toolbox has five main commands:
 
 * `$ toolbox add <toolname> [version]` Downloads and installs `<toolname>`.  A version may optionally be provided, otherwise it will attempt to find the latest version.  This command is also used to upgrade/downgrade tools.
 * `$ toolbox remove <toolname>` Removes `<toolname>` from being tracked by your project.  Also attempts to uninstall the installed binary.
 * `$ toolbox sync` Downloads and installs any missing tools.  If a tool is up-to-date, no action is taken for that tool.
 * `$ toolbox do -- <command>` Runs a command in an environment where the tools managed by toolbox are available.  The dash (`--`) is optional, and is used to denote that flags will belong to the subcommand (otherwise, toolbox will attempt to parse flags itself).
+* `$ toolbox list` Lists all saved tools and their options
 
 Example
 -------
