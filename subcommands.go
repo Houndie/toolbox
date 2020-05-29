@@ -1,6 +1,9 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/Houndie/toolbox/pkg/toolbox"
 	"github.com/spf13/cobra"
 )
@@ -51,9 +54,30 @@ var syncCommand = &cobra.Command{
 	},
 }
 
+var listCommand = &cobra.Command{
+	Use:   "list",
+	Short: "Lists all tool dependencies and their information",
+	Long:  "Parses tools.go and go.mod, and prints the information in easy to parse json",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		tools, err := toolbox.List(makeOptions()...)
+		if err != nil {
+			return err
+		}
+
+		j, err := json.MarshalIndent(&tools, "", "\t")
+		if err != nil {
+			return fmt.Errorf("error marshalling tools to json: %w", err)
+		}
+		fmt.Println(string(j))
+		return nil
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(doCommand)
 	rootCmd.AddCommand(addCommand)
 	rootCmd.AddCommand(removeCommand)
 	rootCmd.AddCommand(syncCommand)
+	rootCmd.AddCommand(listCommand)
 }
