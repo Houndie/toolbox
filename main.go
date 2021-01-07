@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/Houndie/toolbox/pkg/toolbox"
@@ -20,6 +22,10 @@ var rootCmd = &cobra.Command{
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {
+		execErr := &exec.ExitError{}
+		if errors.As(err, &execErr) {
+			os.Exit(execErr.ExitCode())
+		}
 		os.Exit(1)
 	}
 }

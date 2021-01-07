@@ -28,9 +28,7 @@ func DoOpts(command []string, options ...Option) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	// We don't really care about the error from this, stderr goes to screen.
-	_ = cmd.Run()
-	return nil
+	return cmd.Run()
 }
 
 // Command creates an exec.Cmd, modifying the environment and run binary name to reflect the vendored tools.
